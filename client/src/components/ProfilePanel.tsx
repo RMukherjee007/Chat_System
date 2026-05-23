@@ -42,7 +42,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3001/api/user/profile', {
+      const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, display_name: displayName.trim() })

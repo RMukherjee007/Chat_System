@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const token = await user.getIdToken();
       // Call backend to sync user and get lobby_id
-      const response = await fetch('http://localhost:3001/api/auth/verify', {
+      const response = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

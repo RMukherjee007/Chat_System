@@ -14,7 +14,7 @@
     "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
+    "express": "^4.22.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.2",
     "firebase-admin": "^13.10.0",

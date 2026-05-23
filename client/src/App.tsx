@@ -17,7 +17,7 @@ import Settings from './pages/Settings';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = '/';
 
 interface SocketMessage {
   message_id: string;
@@ -157,7 +157,7 @@ const ChatLayout = () => {
     if (!currentUser) return;
     try {
       const token = await currentUser.getIdToken();
-      const res = await fetch('http://localhost:3001/api/rooms', {
+      const res = await fetch('/api/rooms', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -181,7 +181,7 @@ const ChatLayout = () => {
     if (!currentUser) return;
     try {
       const token = await currentUser.getIdToken();
-      const res = await fetch('http://localhost:3001/api/friends', {
+      const res = await fetch('/api/friends', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -206,7 +206,7 @@ const ChatLayout = () => {
 
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/rooms/${activeRoomId}/messages`);
+        const res = await fetch(`/api/rooms/${activeRoomId}/messages`);
         if (res.ok) {
           const data = await res.json();
           const uiMsgs = data.messages.map((msg: any) => {

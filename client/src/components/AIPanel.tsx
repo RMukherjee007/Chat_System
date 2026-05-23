@@ -59,7 +59,7 @@ const AIPanel: React.FC<AIPanelProps> = ({ onClose }) => {
         content: m.content
       }));
 
-      const res = await fetch('http://localhost:3001/api/ai/chat', {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

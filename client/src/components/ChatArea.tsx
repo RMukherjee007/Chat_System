@@ -63,7 +63,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       const recentText = messages.slice(-5).map(m => `${m.senderName}: ${m.text}`).join('\n');
       const prompt = `Summarize these recent messages in the room in a short, bulleted paragraph:\n${recentText}`;
       
-      const res = await fetch('http://localhost:3001/api/ai/chat', {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, message: prompt })
@@ -88,7 +88,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         ? `Suggest a brief, helpful reply to this message: "${msgText}"` 
         : `Summarize this message in one sentence: "${msgText}"`;
       
-      const res = await fetch('http://localhost:3001/api/ai/chat', {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, message: prompt })

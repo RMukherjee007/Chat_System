@@ -31,7 +31,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3001/api/friends/request', {
+      const res = await fetch('/api/friends/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, target_lobby_id: targetLobbyId.trim() })

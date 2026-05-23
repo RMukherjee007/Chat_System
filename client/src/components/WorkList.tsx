@@ -62,7 +62,7 @@ const WorkList: React.FC<WorkListProps> = ({
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3001/api/rooms', {
+      const res = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
