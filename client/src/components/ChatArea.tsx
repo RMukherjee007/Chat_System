@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Paperclip, Mic, Send, Smile, Phone, Video, MoreHorizontal, Info, X, Sparkles, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Paperclip, Mic, Send, Smile, Phone, Video, Info, X, Sparkles, MessageSquare } from 'lucide-react';
 import { auth } from '../firebase';
 
 interface Room {

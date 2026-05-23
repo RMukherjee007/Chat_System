@@ -66,13 +66,13 @@ const NewsPanel: React.FC<NewsPanelProps> = ({ onClose }) => {
   const [news, setNews] = useState<NewsFeedResponse>(FALLBACK_NEWS);
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('World');
-  const [error, setError] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   const fetchNews = async () => {
     setLoading(true);
-    setError('');
+
     try {
       const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
       if (!res.ok) throw new Error('Failed to fetch news');

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Users, UserPlus, CheckCircle, MessageSquare } from 'lucide-react';
+import { Search, X, Users, UserPlus, MessageSquare } from 'lucide-react';
 import { auth } from '../firebase';
 
 interface Friend {

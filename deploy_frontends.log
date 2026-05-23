@@ -1,0 +1,30 @@
+Building using Dockerfile and deploying container to Cloud Run service [chat-frontend] in project [healthy-bonsai-457316-k8] region [us-central1]
+Building and deploying new service...
+Validating configuration........done
+Building using Dockerfile and deploying container to Cloud Run service [os-tracker-frontend] in project [healthy-bonsai-457316-k8] region [us-central1]
+Building and deploying new service...
+Uploading sources...........................done
+Building using Dockerfile and deploying container to Cloud Run service [shareplate-frontend] in project [healthy-bonsai-457316-k8] region [us-central1]
+Building and deploying new service...
+Validating configuration.....................done
+Validating configuration......................done
+Uploading sources...........................done
+Uploading sources.....................................................done
+Building Container................................................................................................................................................................................................................................................................................................................................done
+Building Container...........................................................................................................................................................................................................................................................................................................................................................................done
+Setting IAM Policy..........................................done
+Setting IAM Policy...........................................done
+Creating Revision...........................................................................done
+Routing traffic.....done
+Creating Revision..............................................................done
+Routing traffic.....done
+Done.
+Service [shareplate-frontend] revision [shareplate-frontend-00001-qv7] has been deployed and is serving 100 percent of traffic.
+Service URL: https://shareplate-frontend-883918498227.us-central1.run.app
+Done.
+Service [os-tracker-frontend] revision [os-tracker-frontend-00001-2qx] has been deployed and is serving 100 percent of traffic.
+Service URL: https://os-tracker-frontend-883918498227.us-central1.run.app
+Building Container...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................failed
+Deployment failed
+ERROR: (gcloud.run.deploy) Build failed; check build logs for details
+All frontends deployed!

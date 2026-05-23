@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Briefcase, Plus, Users } from 'lucide-react';
+import { Search, X, Briefcase, Plus } from 'lucide-react';
 import { auth } from '../firebase';
 
 interface Room {
