@@ -351,6 +351,9 @@ io.on('connection', (socket) => {
     db.messages.push(message);
     
     io.to(room_id).emit('receive_message', message);
+    } catch (e) {
+      console.error("Socket send message error:", e.message);
+    }
   });
 });
 
