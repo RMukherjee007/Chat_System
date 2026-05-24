@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Copy, UserPlus, CheckCircle, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import { auth } from '../firebase'; // Need auth for getting token
 import './Settings.css';
 
@@ -10,11 +10,11 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const { appUser, logout } = useAuth();
+  const { appUser } = useAuth();
   const [targetLobbyId, setTargetLobbyId] = useState('');
   const [requestStatus, setRequestStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const navigate = useNavigate();
+
 
   const handleCopy = () => {
     if (appUser?.lobby_id) {
@@ -106,12 +106,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <UserPlus size={18} /> Add
             </button>
           </form>
-        </div>
-        
-        <div className="settings-card danger-zone">
-          <button className="danger-btn" onClick={() => { logout(); navigate('/login'); }}>
-            Log Out
-          </button>
         </div>
       </div>
     </div>

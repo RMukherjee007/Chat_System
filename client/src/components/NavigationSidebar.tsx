@@ -1,12 +1,11 @@
-import React from 'react';
-import { MessageSquare, Briefcase, Users, FileText, Archive, User, Settings as SettingsIcon, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, FileText, Archive, User, Settings as SettingsIcon, Sparkles, Sun, Moon, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import EchoStreamLogo from './EchoStreamLogo';
 
 interface NavigationSidebarProps {
   onToggleChatList?: () => void;
-  onToggleWork?: () => void;
-  onToggleFriends?: () => void;
   onToggleNews?: () => void;
   onToggleArchive?: () => void;
   onToggleProfile?: () => void;
@@ -14,8 +13,6 @@ interface NavigationSidebarProps {
   onToggleAI?: () => void;
 
   showChatListActive?: boolean;
-  showWorkActive?: boolean;
-  showFriendsActive?: boolean;
   showNewsActive?: boolean;
   showArchiveActive?: boolean;
   showProfileActive?: boolean;
@@ -25,8 +22,6 @@ interface NavigationSidebarProps {
 
 const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
   onToggleChatList,
-  onToggleWork,
-  onToggleFriends,
   onToggleNews,
   onToggleArchive,
   onToggleProfile,
@@ -34,8 +29,6 @@ const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
   onToggleAI,
 
   showChatListActive,
-  showWorkActive,
-  showFriendsActive,
   showNewsActive,
   showArchiveActive,
   showProfileActive,
@@ -44,22 +37,35 @@ const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  
+  const [theme, setTheme] = useState('dark');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+    if (savedTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
 
   const handleChatsClick = () => {
     if (!currentUser) return;
     if (onToggleChatList) onToggleChatList();
     else navigate('/');
-  };
-
-  const handleWorkClick = () => {
-    if (!currentUser) return;
-    if (onToggleWork) onToggleWork();
-  };
-
-  const handleFriendsClick = () => {
-    if (!currentUser) return;
-    if (onToggleFriends) onToggleFriends();
   };
 
   const handleNewsClick = () => {
@@ -95,21 +101,13 @@ const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
   return (
     <nav className="nav-sidebar">
       <div className="nav-brand">
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #7678ed, #ff7a55)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>A</div>
+        <EchoStreamLogo size={44} />
       </div>
       
       <div className="nav-items">
         <div className={itemClass(!!showChatListActive || (location.pathname === '/' && showChatListActive !== false))} onClick={handleChatsClick}>
           <MessageSquare size={20} />
           <span>All chats</span>
-        </div>
-        <div className={itemClass(!!showWorkActive)} onClick={handleWorkClick}>
-          <Briefcase size={20} />
-          <span>Work</span>
-        </div>
-        <div className={itemClass(!!showFriendsActive)} onClick={handleFriendsClick}>
-          <Users size={20} />
-          <span>Friends</span>
         </div>
         <div className={itemClass(!!showNewsActive)} onClick={handleNewsClick}>
           <FileText size={20} />
@@ -126,6 +124,10 @@ const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
       </div>
       
       <div className="nav-bottom">
+        <div className="nav-item" onClick={toggleTheme}>
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+        </div>
         <div className={itemClass(!!showProfileActive)} onClick={handleProfileClick}>
           <User size={20} />
           <span>Profile</span>
@@ -133,6 +135,10 @@ const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
         <div className={itemClass(!!showSettingsActive || location.pathname === '/settings')} onClick={handleSettingsClick}>
           <SettingsIcon size={20} />
           <span>Settings</span>
+        </div>
+        <div className="nav-item" onClick={async () => { await logout(); navigate('/login'); }}>
+          <LogOut size={20} />
+          <span>Log Out</span>
         </div>
       </div>
     </nav>

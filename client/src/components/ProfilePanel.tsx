@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, X, LogOut, Copy, Check, Edit2 } from 'lucide-react';
+import { User, X, Copy, Check, Edit2, RefreshCw } from 'lucide-react';
 import { auth } from '../firebase';
 
 interface UserProfile {
@@ -11,14 +11,12 @@ interface UserProfile {
 interface ProfilePanelProps {
   profile: UserProfile | null;
   onUpdateProfile: (updatedProfile: UserProfile) => void;
-  onLogout: () => void;
   onClose?: () => void;
 }
 
 const ProfilePanel: React.FC<ProfilePanelProps> = ({ 
   profile, 
   onUpdateProfile, 
-  onLogout, 
   onClose 
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -57,6 +55,32 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({
         setIsEditing(false);
       } else {
         setError(data.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateNewCode = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/user/generate-lobby-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      if (res.ok && data.lobby_id) {
+        onUpdateProfile({
+          ...profile!,
+          lobby_id: data.lobby_id
+        });
+      } else {
+        setError(data.error || 'Failed to generate code');
       }
     } catch (err) {
       setError('Network error occurred');
@@ -203,36 +227,49 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({
               )}
             </button>
           </div>
-        </div>
 
-        <button 
-          onClick={onLogout}
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: '8px',
-            backgroundColor: '#fff',
-            border: '1px solid #ff4d4f',
-            color: '#ff4d4f',
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            transition: 'all 0.2s'
-          }}
-          className="logout-btn-hover"
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
+          <button 
+            onClick={handleGenerateNewCode}
+            disabled={loading}
+            style={{
+              width: '100%',
+              marginTop: '12px',
+              padding: '10px',
+              borderRadius: '8px',
+              backgroundColor: 'white',
+              border: '1px dashed var(--c-purple)',
+              color: 'var(--c-purple)',
+              fontWeight: 500,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              fontSize: '12px',
+              transition: 'all 0.2s',
+              opacity: loading ? 0.7 : 1
+            }}
+            className="generate-btn-hover"
+          >
+            <RefreshCw size={14} className={loading ? 'spinning' : ''} />
+            Generate New Random Code
+          </button>
+        </div>
       </div>
 
       <style>{`
         .logout-btn-hover:hover {
           background-color: #fff2f0 !important;
           box-shadow: 0 2px 8px rgba(255, 77, 79, 0.1);
+        }
+        .generate-btn-hover:hover:not(:disabled) {
+          background-color: rgba(75, 107, 251, 0.05) !important;
+        }
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { Smile } from 'lucide-react';
 import NavigationSidebar from './components/NavigationSidebar';
@@ -15,6 +15,7 @@ import ProfilePanel from './components/ProfilePanel';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import { useAuth } from './contexts/AuthContext';
+import { auth } from './firebase';
 import './App.css';
 
 const SOCKET_URL = '/';
@@ -62,8 +63,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Main Chat Layout Component
 const ChatLayout = () => {
-  const { currentUser, appUser, refreshAppUser, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser, appUser, refreshAppUser } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -71,11 +71,13 @@ const ChatLayout = () => {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   
-  // Panel orchestration using activePanels array (saved in localStorage)
-  const [activePanels, setActivePanels] = useState<PanelType[]>(() => {
-    const saved = localStorage.getItem('activePanels');
-    return saved ? JSON.parse(saved) : ['chats'];
+  // Panel orchestration using single activeTab string
+  const [activeTab, setActiveTab] = useState<PanelType>(() => {
+    const saved = localStorage.getItem('activeTab');
+    return saved ? (JSON.parse(saved) as PanelType) : 'chats';
   });
+  
+  const [showInfo, setShowInfo] = useState(false);
 
   // Archived room ids state (saved in localStorage)
   const [archivedRoomIds, setArchivedRoomIds] = useState<string[]>(() => {
@@ -86,31 +88,14 @@ const ChatLayout = () => {
   const userId = appUser?.lobby_id || 'unknown';
   const activeRoom = rooms.find(r => r.id === activeRoomId) || null;
 
-  // Toggle panel in workspace
-  const handleTogglePanel = (panel: PanelType) => {
-    setActivePanels(prev => {
-      let next;
-      if (prev.includes(panel)) {
-        next = prev.filter(p => p !== panel);
-      } else {
-        next = [...prev, panel];
-      }
-      localStorage.setItem('activePanels', JSON.stringify(next));
-      return next;
-    });
-  };
-
-  // Close panel in workspace
-  const handleClosePanel = (panel: PanelType) => {
-    setActivePanels(prev => {
-      const next = prev.filter(p => p !== panel);
-      localStorage.setItem('activePanels', JSON.stringify(next));
-      return next;
-    });
+  // Change active tab
+  const handleSelectTab = (tab: PanelType) => {
+    setActiveTab(tab);
+    localStorage.setItem('activeTab', JSON.stringify(tab));
   };
 
   const handleToggleInfo = () => {
-    handleTogglePanel('info');
+    setShowInfo(!showInfo);
   };
 
   const handleArchiveRoom = (roomId: string) => {
@@ -121,7 +106,7 @@ const ChatLayout = () => {
     }
     if (activeRoomId === roomId) {
       setActiveRoomId(null);
-      handleClosePanel('info');
+      setShowInfo(false);
     }
   };
 
@@ -136,14 +121,6 @@ const ChatLayout = () => {
     await refreshAppUser();
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (err) {
-      console.error('Failed to log out', err);
-    }
-  };
 
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId);
@@ -241,8 +218,13 @@ const ChatLayout = () => {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
-      newSocket.emit('join_room', { room_id: activeRoomId });
+    newSocket.on('connect', async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        newSocket.emit('join_room', { room_id: activeRoomId, token });
+      } catch (e) {
+        console.error("Socket connect token error", e);
+      }
     });
 
     newSocket.on('receive_message', (msg: SocketMessage) => {
@@ -288,48 +270,52 @@ const ChatLayout = () => {
     
     setMessages((prev) => [...prev, localMsg]);
     
-    socket.emit('send_message', {
-      room_id: activeRoomId,
-      sender_id: userId,
-      content: text
-    });
+    const sendWithToken = async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        socket.emit('send_message', {
+          room_id: activeRoomId,
+          sender_id: userId,
+          content: text,
+          token
+        });
+      } catch (e) {
+        console.error("Message send auth error", e);
+      }
+    };
+    sendWithToken();
   };
 
   return (
-    <div className={`app-layout ${activePanels.includes('info') ? 'info-open' : ''} ${activeRoomId ? 'has-active-room' : 'no-active-room'}`}>
+    <div className={`app-layout ${showInfo ? 'info-open' : ''} ${activeRoomId ? 'has-active-room' : 'no-active-room'}`}>
       <NavigationSidebar 
-        onToggleChatList={() => handleTogglePanel('chats')}
-        onToggleWork={() => handleTogglePanel('work')}
-        onToggleFriends={() => handleTogglePanel('friends')}
-        onToggleNews={() => handleTogglePanel('news')}
-        onToggleArchive={() => handleTogglePanel('archive')}
-        onToggleAI={() => handleTogglePanel('ai')}
-        onToggleProfile={() => handleTogglePanel('profile')}
-        onToggleSettings={() => handleTogglePanel('settings')}
-        showChatListActive={activePanels.includes('chats')}
-        showWorkActive={activePanels.includes('work')}
-        showFriendsActive={activePanels.includes('friends')}
-        showNewsActive={activePanels.includes('news')}
-        showArchiveActive={activePanels.includes('archive')}
-        showAIActive={activePanels.includes('ai')}
-        showProfileActive={activePanels.includes('profile')}
-        showSettingsActive={activePanels.includes('settings')}
+        onToggleChatList={() => handleSelectTab('chats')}
+        onToggleNews={() => handleSelectTab('news')}
+        onToggleArchive={() => handleSelectTab('archive')}
+        onToggleAI={() => handleSelectTab('ai')}
+        onToggleProfile={() => handleSelectTab('profile')}
+        onToggleSettings={() => handleSelectTab('settings')}
+        showChatListActive={activeTab === 'chats'}
+        showNewsActive={activeTab === 'news'}
+        showArchiveActive={activeTab === 'archive'}
+        showAIActive={activeTab === 'ai'}
+        showProfileActive={activeTab === 'profile'}
+        showSettingsActive={activeTab === 'settings'}
       />
       <div className="app-workspace">
-        {/* Left Side: Navigation / List Panels */}
-        {activePanels.includes('chats') && (
+        {/* Secondary Sidebar (Left) */}
+        {activeTab === 'chats' && (
           <div className="animate-panel chat-list-panel">
             <ChatList 
               rooms={rooms.filter(room => !archivedRoomIds.includes(room.id))}
               activeRoomId={activeRoomId}
               onSelectRoom={handleSelectRoom}
               loading={loadingRooms}
-              onClose={() => handleClosePanel('chats')}
             />
           </div>
         )}
 
-        {activePanels.includes('work') && (
+        {activeTab === 'work' && (
           <div className="animate-panel work-list-panel">
             <WorkList 
               rooms={rooms}
@@ -337,47 +323,61 @@ const ChatLayout = () => {
               activeRoomId={activeRoomId}
               onSelectRoom={handleSelectRoom}
               onRefreshRooms={fetchRooms}
-              onClose={() => handleClosePanel('work')}
             />
           </div>
         )}
 
-        {activePanels.includes('friends') && (
+        {activeTab === 'friends' && (
           <div className="animate-panel friends-panel">
             <FriendsList 
               friends={friends}
               onSelectRoom={handleSelectRoom}
               onRefreshRooms={fetchRooms}
               onRefreshFriends={fetchFriends}
-              onClose={() => handleClosePanel('friends')}
             />
           </div>
         )}
 
-        {activePanels.includes('archive') && (
+        {activeTab === 'archive' && (
           <div className="animate-panel archive-panel">
             <ArchivePanel 
               archivedRoomIds={archivedRoomIds}
               rooms={rooms}
               onUnarchiveRoom={handleUnarchiveRoom}
-              onClose={() => handleClosePanel('archive')}
             />
           </div>
         )}
 
-        {activePanels.includes('profile') && (
+        {activeTab === 'profile' && (
           <div className="animate-panel profile-panel">
             <ProfilePanel 
               profile={appUser}
               onUpdateProfile={handleUpdateProfile}
-              onLogout={handleLogout}
-              onClose={() => handleClosePanel('profile')}
+
             />
           </div>
         )}
 
-        {/* Center: Main Chat View */}
-        {activeRoomId && activeRoom ? (
+        {activeTab === 'settings' && (
+          <div className="animate-panel settings-panel">
+            <Settings onClose={() => handleSelectTab('chats')} />
+          </div>
+        )}
+
+        {activeTab === 'ai' && (
+          <div className="animate-panel ai-panel">
+            <AIPanel />
+          </div>
+        )}
+
+        {activeTab === 'news' && (
+          <div className="animate-panel news-panel">
+            <NewsPanel />
+          </div>
+        )}
+
+        {/* Center: Main Chat View (only show if we are in a tab that supports chat viewing and a room is selected) */}
+        {['chats', 'work', 'friends', 'archive'].includes(activeTab) && activeRoomId && activeRoom ? (
           <div className="animate-panel chat-area-panel">
             <ChatArea 
               activeRoom={activeRoom}
@@ -386,53 +386,28 @@ const ChatLayout = () => {
               sendMessage={sendMessage} 
               onToggleInfo={handleToggleInfo}
               onBack={() => setActiveRoomId(null)}
-              showInfoActive={activePanels.includes('info')}
+              showInfoActive={showInfo}
             />
           </div>
         ) : (
-          // If no chat selected and no other panels open, show empty state
-          activePanels.length === 0 && (
+          ['chats', 'work', 'friends', 'archive'].includes(activeTab) && (
             <div className="workspace-empty-state">
               <Smile size={48} style={{ marginBottom: '16px', color: 'var(--c-purple)', opacity: 0.7 }} />
-              <h3>Your Workspace is Empty</h3>
+              <h3>Select a Chat</h3>
               <p style={{ marginTop: '8px', fontSize: '13px', color: 'var(--c-text-muted)' }}>
-                Select options from the sidebar to open workspace panels.
+                Choose a conversation from the list to start messaging.
               </p>
             </div>
           )
         )}
 
-        {/* Right Side: Tooling / Details Panels */}
-        {activePanels.includes('info') && activeRoomId && (
+        {/* Right Side: Group Info Panel */}
+        {showInfo && activeRoomId && ['chats', 'work', 'friends', 'archive'].includes(activeTab) && (
           <div className="animate-panel group-info-panel">
             <GroupInfo 
               activeRoom={activeRoom}
-              onClose={() => handleClosePanel('info')}
+              onClose={() => setShowInfo(false)}
               onArchiveRoom={handleArchiveRoom}
-            />
-          </div>
-        )}
-
-        {activePanels.includes('settings') && (
-          <div className="animate-panel settings-panel">
-            <Settings 
-              onClose={() => handleClosePanel('settings')}
-            />
-          </div>
-        )}
-
-        {activePanels.includes('ai') && (
-          <div className="animate-panel ai-panel">
-            <AIPanel 
-              onClose={() => handleClosePanel('ai')}
-            />
-          </div>
-        )}
-
-        {activePanels.includes('news') && (
-          <div className="animate-panel news-panel">
-            <NewsPanel 
-              onClose={() => handleClosePanel('news')}
             />
           </div>
         )}
